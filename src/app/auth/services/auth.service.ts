@@ -66,4 +66,10 @@ export class AuthService {
       })
     );
   }
+
+  logout() {
+    localStorage.removeItem('token');
+    this._currentUser.set(null);
+    this._authStatus.set(AuthStatus.notAuthenticated);
+  }
 }
