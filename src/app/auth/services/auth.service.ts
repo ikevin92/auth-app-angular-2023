@@ -25,6 +25,14 @@ export class AuthService {
 
   constructor() {}
 
+  private setAuthentication(user: User, token: string): boolean {
+    this._currentUser.set(user);
+    this._authStatus.set(AuthStatus.authenticated);
+    localStorage.setItem('token', token);
+
+    return true;
+  }
+
   loginService(email: string, password: string): Observable<boolean> {
     const url = `${this.baseUrl}/auth/login`;
     const body = {
@@ -33,14 +41,7 @@ export class AuthService {
     };
 
     return this.http.post<LoginResponse>(url, body).pipe(
-      tap(({ token, user }) => {
-        // console.log({ token, user });
-        this._currentUser.set(user);
-        this._authStatus.set(AuthStatus.authenticated);
-        localStorage.setItem('token', token);
-      }),
-      map(() => true),
-
+      map(({ token, user }) => this.setAuthentication(user, token)),
       //! errores
       catchError((err) => throwError(() => err.error.message))
     );
@@ -55,14 +56,8 @@ export class AuthService {
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
     return this.http.get<CheckTokenResponse>(url, { headers }).pipe(
-      map(({ token, user }) => {
-        this._currentUser.set(user);
-        this._authStatus.set(AuthStatus.authenticated);
-        localStorage.setItem('token', token);
-
-        return true;
-      }),
-
+      map(({ token, user }) => this.setAuthentication(user, token)),
+      //! errores
       catchError(() => {
         this._authStatus.set(AuthStatus.notAuthenticated);
         return of(false);
